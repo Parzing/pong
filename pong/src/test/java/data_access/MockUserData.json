@@ -1,0 +1,7 @@
+{
+  "username": ["username"],
+  "password": ["password"],
+  "time played": [50000],
+  "games": [2, 3, 4],
+  "wins": [1, 2, 3]
+}
