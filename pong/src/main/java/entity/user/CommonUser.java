@@ -5,16 +5,12 @@ public class CommonUser implements User{
     private DataSet dataSet;
     private String username;
     private String password;
-    private int gamesPlayed;
-    private int gamesWon;
 
-    public CommonUser(String username, String password, DataSet dataSet, int gamesPlayed, int gamesWon) {
+    public CommonUser(String username, String password, DataSet dataSet) {
         this.dataSet = dataSet;
         this.username = username;
         this.password = password;
-        this.gamesPlayed = gamesPlayed;
-        this.gamesWon = gamesWon;
-    }
+}
 
 
     public DataSet getDataSet() {
@@ -27,14 +23,6 @@ public class CommonUser implements User{
 
     public String getPassword() {
         return password;
-    }
-
-    public int getGamesPlayed() {
-        return gamesPlayed;
-    }
-
-    public int getGamesWon() {
-        return gamesWon;
     }
 
     /**
@@ -54,24 +42,6 @@ public class CommonUser implements User{
      */
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    /**
-     * Sets the new number of games played.
-     *
-     * @param gamesPlayed The new number of games played
-     */
-    public void setGamesPlayed(int gamesPlayed) {
-        this.gamesPlayed = gamesPlayed;
-    }
-
-    /**
-     * Sets the number of games won.
-     *
-     * @param gamesWon The new number of games won.
-     */
-    public void setGamesWon(int gamesWon) {
-        this.gamesWon = gamesWon;
     }
 
     /**

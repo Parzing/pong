@@ -9,8 +9,5 @@
         <module name="Pong" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="Pong" target="11" />
-    </bytecodeTargetLevel>
   </component>
 </project>

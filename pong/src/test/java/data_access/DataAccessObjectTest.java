@@ -45,7 +45,7 @@ public class DataAccessObjectTest {
         } while (!mockUserDataOrigin.equals(mockUserDataPath));
 
         return Stream.of(Arguments.of(
-                new FileUserDataAccessObject(mockUserDataPath.getPath(), mockDataEncryption))
+                new FileUserDataAccessObject(mockUserDataPath.getPath(), mockDataEncryption, "MockUserData"))
         );
     }
 
