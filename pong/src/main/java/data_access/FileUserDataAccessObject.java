@@ -33,7 +33,7 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
 
     final private String userDataDirectory;
     final private DataEncryption dataEncryption;
-    final private String fileType = ".json";
+    final private String fileType = ".txt";
     final private User user;
     final private HashMap<String, User> cachedUsers;
 
@@ -47,17 +47,22 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
     public FileUserDataAccessObject(String userDataDirectory, DataEncryption dataEncryption, String username) {
         this.userDataDirectory = userDataDirectory;
         this.dataEncryption = dataEncryption;
-        user = get(username);
         cachedUsers = new HashMap<>();
+        user = get(username);
         cachedUsers.put(username, user);
     }
 
-    /** Loads a user from the username
+    /** Loads a user from the username.
+     * It also loads the user into a cache for quick access.
      *
      * @param username The username of the user.
      * @return a User object that has the data of the user's file loaded in.
      */
     public User get(String username) {
+        if(!cachedUsers.isEmpty() && cachedUsers.containsKey(username)) {
+            return cachedUsers.get(username);
+        }
+
         User user = new CommonUserFactory().create();
         String userFile = getUserPath(username);
 
@@ -85,14 +90,17 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
         loadTimePlayed(user, jsonObject);
         loadNumGames(user, jsonObject);
         loadNumWins(user, jsonObject);
+
+        // Save user to the cache for quick access.
+        cachedUsers.put(username, user);
         return user;
     }
 
     // This is a list of attribute adders that add various things to the user.
 
     private void loadUsername(User user, JsonObject jsonObject) {
-        if (jsonObject.has("username")) {
-            user.setName(jsonObject.get("username").getAsString());
+        if (jsonObject.has(DataFormat.USERNAME)) {
+            user.setName(jsonObject.get(DataFormat.USERNAME).getAsString());
         }
     }
     private void loadPassword(User user, JsonObject jsonObject) {
@@ -101,18 +109,18 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
         }
     }
     private void loadTimePlayed(User user, JsonObject jsonObject) {
-        if (jsonObject.has("timePlayed")) {
-            user.getDataSet().setPlayTime(jsonObject.get("timePlayed").getAsLong());
+        if (jsonObject.has(DataFormat.TIME_PLAYED)) {
+            user.getDataSet().setPlayTime(jsonObject.get(DataFormat.TIME_PLAYED).getAsLong());
         }
     }
     private void loadNumGames(User user, JsonObject jsonObject) {
-        if (jsonObject.has("numGames")) {
-            user.getDataSet().setNumberOfGames(jsonObject.get("numGames").getAsInt());
+        if (jsonObject.has(DataFormat.NUM_GAMES)) {
+            user.getDataSet().setNumberOfGames(jsonObject.get(DataFormat.NUM_GAMES).getAsInt());
         }
     }
     private void loadNumWins(User user, JsonObject jsonObject) {
-        if (jsonObject.has("numWins")) {
-            user.getDataSet().setNumberOfWins(jsonObject.get("numWins").getAsInt());
+        if (jsonObject.has(DataFormat.WINS)) {
+            user.getDataSet().setNumberOfWins(jsonObject.get(DataFormat.WINS).getAsInt());
         }
     }
 
@@ -141,14 +149,14 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
 
     /**
      * Saves the user. It takes the DataSet from the User and
-     * converts it into {@code .json} format to be saved.
+     * converts it into {@code fileType} format to be saved.
      * @param user the user whose data we are going to save.
      */
     @Override
     public void save(User user) {
-
         JsonObject jsonObject = new JsonObject();
 
+        // Saves the user attributes to the jsonObject.
         saveUsername(jsonObject, user);
         savePassword(jsonObject, user);
         saveTimePlayed(jsonObject, user);
@@ -157,23 +165,30 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
 
         final String encryptedData = dataEncryption.encrypt(jsonObject.toString());
         final File file = new File(getUserDataDirectory(user.getName()));
-        // TODO: unfinished busines
+        try {
+            final FileWriter writer = new FileWriter(file);
+            writer.write(encryptedData);
+        } catch (IOException ex) {
+            System.err.println("An error occurred while writing the file: " + ex.getMessage());
+        }
     }
 
+    // A list of attribute adders that add data to the JsonObject.
+
     private void saveUsername(JsonObject jsonObject, User user) {
-        jsonObject.addProperty("username", user.getName());
+        jsonObject.addProperty(DataFormat.USERNAME, user.getName());
     }
     private void savePassword(JsonObject jsonObject, User user) {
-        jsonObject.addProperty("password", user.getPassword());
+        jsonObject.addProperty(DataFormat.PASSWORD, user.getPassword());
     }
     private void saveTimePlayed(JsonObject jsonObject, User user) {
-        jsonObject.addProperty("timePlayed", user.getDataSet().getPlayTime());
+        jsonObject.addProperty(DataFormat.TIME_PLAYED, user.getDataSet().getPlayTime());
     }
     private void saveNumGames(JsonObject jsonObject, User user) {
-        jsonObject.addProperty("numGames", user.getDataSet().getNumberOfGames());
+        jsonObject.addProperty(DataFormat.NUM_GAMES, user.getDataSet().getNumberOfGames());
     }
     private void saveNumWins(JsonObject jsonObject, User user) {
-        jsonObject.addProperty("numWins", user.getDataSet().getNumberOfWins());
+        jsonObject.addProperty(DataFormat.WINS, user.getDataSet().getNumberOfWins());
     }
 
     /** Gets a file corresponding to a user.

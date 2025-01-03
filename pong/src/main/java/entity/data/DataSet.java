@@ -7,6 +7,6 @@ public interface DataSet {
 
     int getNumberOfGames();
     int getNumberOfWins();
-    int getPlayTime();
+    long getPlayTime();
     // TODO: more dataset functionality later
 }
