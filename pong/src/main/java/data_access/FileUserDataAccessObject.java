@@ -1,10 +1,6 @@
 package data_access;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import data_access.encryption.DataEncryption;
-import entity.data.DataSet;
-import entity.user.CommonUserFactory;
 import entity.user.User;
 import use_case.account.change_password.ChangePasswordUserDataAccessInterface;
 import use_case.account.login.LoginUserDataAccessInterface;
@@ -33,9 +29,11 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
 
     final private String userDataDirectory;
     final private DataEncryption dataEncryption;
-    final private String fileType = ".txt";
-    final private User user;
+    final private String fileType = ".txt"; // TODO: this piece of code is smelly
     final private HashMap<String, User> cachedUsers;
+    final private DataParser dataParser = new JsonDataParser();
+    private User user;
+
 
     /**
      * This takes in a userDataDirectory. It is typically the directory pong/userdata
@@ -47,9 +45,21 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
     public FileUserDataAccessObject(String userDataDirectory, DataEncryption dataEncryption, String username) {
         this.userDataDirectory = userDataDirectory;
         this.dataEncryption = dataEncryption;
+
         cachedUsers = new HashMap<>();
+        load(username);
+    }
+
+    /** Loads the user from the username into memory.
+     *  It also saves the user that was previously loaded, if there was one.
+     *
+     * @param username The user that we are going to load.
+     */
+    public void load(String username) {
+        if (user != null) {
+            save(user);
+        }
         user = get(username);
-        cachedUsers.put(username, user);
     }
 
     /** Loads a user from the username.
@@ -63,15 +73,14 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
             return cachedUsers.get(username);
         }
 
-        User user = new CommonUserFactory().create();
         String userFile = getUserPath(username);
 
         // Use BufferedReader to read the file
-        StringBuilder jsonContent = new StringBuilder();
+        StringBuilder fileContent = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new FileReader(userFile))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                jsonContent.append(line);
+                fileContent.append(line);
             }
         } catch (IOException ex) {
             System.err.println("An error occurred while reading the file: " + ex.getMessage());
@@ -79,51 +88,16 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
             System.exit(1);
         }
 
-        String decryptedJsonContent = dataEncryption.decrypt(jsonContent.toString());
+        // Decrypt the file content
+        String decryptedFileContent = dataEncryption.decrypt(fileContent.toString());
 
-        // Parse the JSON content
-        JsonObject jsonObject = JsonParser.parseString(decryptedJsonContent).getAsJsonObject();
-
-        // Add all the various attributes.
-        loadUsername(user, jsonObject);
-        loadPassword(user, jsonObject);
-        loadTimePlayed(user, jsonObject);
-        loadNumGames(user, jsonObject);
-        loadNumWins(user, jsonObject);
+        // Load the file content into the user.
+        User user = dataParser.load(decryptedFileContent);
 
         // Save user to the cache for quick access.
         cachedUsers.put(username, user);
         return user;
     }
-
-    // This is a list of attribute adders that add various things to the user.
-
-    private void loadUsername(User user, JsonObject jsonObject) {
-        if (jsonObject.has(DataFormat.USERNAME)) {
-            user.setName(jsonObject.get(DataFormat.USERNAME).getAsString());
-        }
-    }
-    private void loadPassword(User user, JsonObject jsonObject) {
-        if (jsonObject.has("password")) {
-            user.setPassword(jsonObject.get("password").getAsString());
-        }
-    }
-    private void loadTimePlayed(User user, JsonObject jsonObject) {
-        if (jsonObject.has(DataFormat.TIME_PLAYED)) {
-            user.getDataSet().setPlayTime(jsonObject.get(DataFormat.TIME_PLAYED).getAsLong());
-        }
-    }
-    private void loadNumGames(User user, JsonObject jsonObject) {
-        if (jsonObject.has(DataFormat.NUM_GAMES)) {
-            user.getDataSet().setNumberOfGames(jsonObject.get(DataFormat.NUM_GAMES).getAsInt());
-        }
-    }
-    private void loadNumWins(User user, JsonObject jsonObject) {
-        if (jsonObject.has(DataFormat.WINS)) {
-            user.getDataSet().setNumberOfWins(jsonObject.get(DataFormat.WINS).getAsInt());
-        }
-    }
-
 
     /**
      * Updates the system to record this user's password.
@@ -154,41 +128,13 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
      */
     @Override
     public void save(User user) {
-        JsonObject jsonObject = new JsonObject();
-
-        // Saves the user attributes to the jsonObject.
-        saveUsername(jsonObject, user);
-        savePassword(jsonObject, user);
-        saveTimePlayed(jsonObject, user);
-        saveNumGames(jsonObject, user);
-        saveNumWins(jsonObject, user);
-
-        final String encryptedData = dataEncryption.encrypt(jsonObject.toString());
+        final String encryptedData = dataEncryption.encrypt(dataParser.save(user));
         final File file = new File(getUserDataDirectory(user.getName()));
-        try {
-            final FileWriter writer = new FileWriter(file);
+        try (FileWriter writer = new FileWriter(file)){
             writer.write(encryptedData);
         } catch (IOException ex) {
             System.err.println("An error occurred while writing the file: " + ex.getMessage());
         }
-    }
-
-    // A list of attribute adders that add data to the JsonObject.
-
-    private void saveUsername(JsonObject jsonObject, User user) {
-        jsonObject.addProperty(DataFormat.USERNAME, user.getName());
-    }
-    private void savePassword(JsonObject jsonObject, User user) {
-        jsonObject.addProperty(DataFormat.PASSWORD, user.getPassword());
-    }
-    private void saveTimePlayed(JsonObject jsonObject, User user) {
-        jsonObject.addProperty(DataFormat.TIME_PLAYED, user.getDataSet().getPlayTime());
-    }
-    private void saveNumGames(JsonObject jsonObject, User user) {
-        jsonObject.addProperty(DataFormat.NUM_GAMES, user.getDataSet().getNumberOfGames());
-    }
-    private void saveNumWins(JsonObject jsonObject, User user) {
-        jsonObject.addProperty(DataFormat.WINS, user.getDataSet().getNumberOfWins());
     }
 
     /** Gets a file corresponding to a user.

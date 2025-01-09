@@ -6,6 +6,15 @@ import entity.data.DataSet;
  * An interface that generates a new User.
  */
 public interface UserFactory {
+
+    /**
+     * Creates a new User that is completely blank. It defaults to
+     * having a null username and password, with a blank DataSet.
+     *
+     * @return the new user
+     */
+    User create();
+
     /**
      * Creates a new User that is blank, except for the name and password fields.
      * Specifically, it should initalize the User with an empty DataSet

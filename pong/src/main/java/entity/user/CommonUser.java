@@ -1,7 +1,8 @@
 package entity.user;
+
 import entity.data.DataSet;
 
-public class CommonUser implements User{
+public class CommonUser implements User {
     private DataSet dataSet;
     private String username;
     private String password;
@@ -10,8 +11,7 @@ public class CommonUser implements User{
         this.dataSet = dataSet;
         this.username = username;
         this.password = password;
-}
-
+    }
 
     public DataSet getDataSet() {
         return dataSet;
