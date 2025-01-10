@@ -1,5 +1,13 @@
 package data_access;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import data_access.encryption.DataEncryption;
 import entity.user.User;
 import use_case.account.change_password.ChangePasswordUserDataAccessInterface;
@@ -7,11 +15,8 @@ import use_case.account.login.LoginUserDataAccessInterface;
 import use_case.account.logout.LogoutUserDataAccessInterface;
 import use_case.account.signup.SignupUserDataAccessInterface;
 
-import java.io.*;
-import java.util.HashMap;
-
-
-/** This is a class that lets you access the data of one user.
+/**
+ * This is a class that lets you access the data of one user.
  * It contains various methods to change password, login, logout, signup users.
  */
 
@@ -27,13 +32,13 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
      * so that we don't have to lookup and decrypt users we have already looked up.
      */
 
-    final private String userDataDirectory;
-    final private DataEncryption dataEncryption;
-    final private String fileType = ".txt"; // TODO: this piece of code is smelly
-    final private HashMap<String, User> cachedUsers;
-    final private DataParser dataParser = new JsonDataParser();
+    private final String userDataDirectory;
+    private final DataEncryption dataEncryption;
+    // FIXME: slightly smelly .txt constant
+    private final String fileType = ".txt";
+    private final Map<String, User> cachedUsers;
+    private final DataParser dataParser = new JsonDataParser();
     private User user;
-
 
     /**
      * This takes in a userDataDirectory. It is typically the directory pong/userdata
@@ -50,8 +55,9 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
         load(username);
     }
 
-    /** Loads the user from the username into memory.
-     *  It also saves the user that was previously loaded, if there was one.
+    /**
+     * Loads the user from the username into memory.
+     * It also saves the user that was previously loaded, if there was one.
      *
      * @param username The user that we are going to load.
      */
@@ -62,41 +68,43 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
         user = get(username);
     }
 
-    /** Loads a user from the username.
+    /**
+     * Loads a user from the username.
      * It also loads the user into a cache for quick access.
      *
      * @param username The username of the user.
      * @return a User object that has the data of the user's file loaded in.
      */
     public User get(String username) {
-        if(!cachedUsers.isEmpty() && cachedUsers.containsKey(username)) {
+        if (!cachedUsers.isEmpty() && cachedUsers.containsKey(username)) {
             return cachedUsers.get(username);
         }
 
-        String userFile = getUserPath(username);
+        final String userFile = getUserPath(username);
 
         // Use BufferedReader to read the file
-        StringBuilder fileContent = new StringBuilder();
+        final StringBuilder fileContent = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new FileReader(userFile))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 fileContent.append(line);
             }
-        } catch (IOException ex) {
+        }
+        catch (IOException ex) {
             System.err.println("An error occurred while reading the file: " + ex.getMessage());
             System.out.println("The user's file could not be read.");
             System.exit(1);
         }
 
         // Decrypt the file content
-        String decryptedFileContent = dataEncryption.decrypt(fileContent.toString());
+        final String decryptedFileContent = dataEncryption.decrypt(fileContent.toString());
 
         // Load the file content into the user.
-        User user = dataParser.load(decryptedFileContent);
+        final User newUser = dataParser.deserialize(decryptedFileContent);
 
         // Save user to the cache for quick access.
-        cachedUsers.put(username, user);
-        return user;
+        cachedUsers.put(username, newUser);
+        return newUser;
     }
 
     /**
@@ -116,28 +124,30 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
      */
     @Override
     public boolean existsByName(String username) {
-        String path = getUserDataDirectory(username);
-        File file = new File(path);
+        final String path = getUserDataDirectory(username);
+        final File file = new File(path);
         return file.exists();
     }
 
     /**
      * Saves the user. It takes the DataSet from the User and
      * converts it into {@code fileType} format to be saved.
-     * @param user the user whose data we are going to save.
+     * @param newUser the user whose data we are going to save.
      */
     @Override
-    public void save(User user) {
-        final String encryptedData = dataEncryption.encrypt(dataParser.save(user));
-        final File file = new File(getUserDataDirectory(user.getName()));
-        try (FileWriter writer = new FileWriter(file)){
+    public void save(User newUser) {
+        final String encryptedData = dataEncryption.encrypt(dataParser.serialize(newUser));
+        final File file = new File(getUserDataDirectory(newUser.getName()));
+        try (FileWriter writer = new FileWriter(file)) {
             writer.write(encryptedData);
-        } catch (IOException ex) {
+        }
+        catch (IOException ex) {
             System.err.println("An error occurred while writing the file: " + ex.getMessage());
         }
     }
 
-    /** Gets a file corresponding to a user.
+    /**
+     * Gets a file corresponding to a user.
      *
      * @param username The name of the User's file.
      * @return A String whose path is for the User's file.
@@ -166,7 +176,6 @@ public class FileUserDataAccessObject implements ChangePasswordUserDataAccessInt
     public void setCurrentUsername(String username) {
         user.setName(username);
     }
-
 
     private String getUserDataDirectory(String username) {
         return userDataDirectory + File.separator + username + fileType;

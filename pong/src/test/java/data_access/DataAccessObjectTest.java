@@ -51,14 +51,42 @@ public class DataAccessObjectTest {
     @MethodSource("provideAllTestCases")
     public void testSaveAndLoad(FileUserDataAccessObject dataAccessObject) {
         DataSet testDataSet = new UserDataSet(4, 1, 50000);
-        User testUser = userFactory.create("username", "password", testDataSet);
+        User testUser = userFactory.create("MockUserData", "password", testDataSet);
         User DAOUser = dataAccessObject.get("MockUserData");
         // test load
         assert usersEqual(testUser, DAOUser);
+        DAOUser.getDataSet().setNumberOfGames(8);
+        dataAccessObject.save(DAOUser);
 
+        DataSet testDataSet2 = new UserDataSet(8, 10, 12);
+        User newUser = userFactory.create("MockUserData2", "password", testDataSet2);
+        dataAccessObject.save(newUser);
+        User DAOUser2 = dataAccessObject.get("MockUserData2");
+        // test save
+        assert usersEqual(newUser, DAOUser2);
+    }
 
+    @ParameterizedTest
+    @MethodSource("provideAllTestCases")
+    public void testGetSetUsername(FileUserDataAccessObject dataAccessObject) {
+        assert dataAccessObject.getCurrentUsername().equals("MockUserData");
+        dataAccessObject.setCurrentUsername("MockUserData2");
+        assert dataAccessObject.getCurrentUsername().equals("MockUserData2");
+    }
 
+    @ParameterizedTest
+    @MethodSource("provideAllTestCases")
+    public void testChangePassword(FileUserDataAccessObject dataAccessObject) {
+        assert dataAccessObject.get("MockUserData").getPassword().equals("password");
+        dataAccessObject.changePassword("password2");
+        assert dataAccessObject.get("MockUserData").getPassword().equals("password2");
+    }
 
+    @ParameterizedTest
+    @MethodSource("provideAllTestCases")
+    public void testExistsByName(FileUserDataAccessObject dataAccessObject) {
+        assert dataAccessObject.existsByName("MockUserData");
+        assert !dataAccessObject.existsByName("InvalidMockUserData");
     }
 
     private boolean usersEqual(User user1, User user2) {

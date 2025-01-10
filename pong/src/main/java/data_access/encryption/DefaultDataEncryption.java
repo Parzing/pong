@@ -1,6 +1,5 @@
 package data_access.encryption;
 
-
 /**
  * This is a default implementation of data encryption. For now, it does not do anything for
  * encryption and decryption. TODO: make the class encrypt and decrypt properly

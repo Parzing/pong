@@ -1,6 +1,6 @@
 package entity.user;
+
 import entity.data.DataSet;
-import java.util.UUID;
 
 /**
  * The representation of a user in our program.
@@ -31,7 +31,7 @@ public interface User {
     String getName();
 
     /**
-     * Gets this user's password
+     * Gets this user's password.
      * @return the password of the user.
      */
     String getPassword();

@@ -1,6 +1,6 @@
 package entity.data;
 
-public class UserDataSet implements DataSet{
+public class UserDataSet implements DataSet {
 
     private int numberOfGames;
     private int numberOfWins;
@@ -18,11 +18,9 @@ public class UserDataSet implements DataSet{
         this.playTime = playTime;
     }
 
-
     public void setNumberOfGames(int numberOfGames) {
         this.numberOfGames = numberOfGames;
     }
-
 
     public void setNumberOfWins(int numberOfWins) {
         this.numberOfWins = numberOfWins;

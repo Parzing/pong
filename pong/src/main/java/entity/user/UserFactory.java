@@ -1,6 +1,6 @@
 package entity.user;
-import entity.data.DataSet;
 
+import entity.data.DataSet;
 
 /**
  * An interface that generates a new User.
@@ -25,6 +25,12 @@ public interface UserFactory {
      */
     User create(String name, String password);
 
-
+    /**
+     * Creates a new User that is defined by the name, password, and dataset given.
+     * @param name The User's name
+     * @param password The User's password
+     * @param dataSet The dataset of the User
+     * @return A user that contains the information specified
+     */
     User create(String name, String password, DataSet dataSet);
 }
